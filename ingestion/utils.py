@@ -1,4 +1,6 @@
 import hashlib
+from sqlalchemy import cast, String
+
 from datetime import datetime
 from database import SessionLocal
 from models import RawOSINT
