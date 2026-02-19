@@ -1,0 +1,23 @@
+# Backend Framework
+fastapi
+uvicorn
+
+# Database
+sqlalchemy
+psycopg2-binary
+
+# Scheduler
+apscheduler
+
+# HTTP Requests
+requests
+
+# Environment Variables
+python-dotenv
+
+# RSS Parsing (future use)
+feedparser
+
+# Reddit API (future use)
+praw
+
