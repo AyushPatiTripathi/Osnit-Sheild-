@@ -1,11 +1,11 @@
 import requests
 import logging
+import os
 import hashlib
-from datetime import datetime
+from dotenv import load_dotenv
+
 from database import SessionLocal
 from models import RawOSINT
-from dotenv import load_dotenv
-import os
 
 load_dotenv()
 
@@ -16,44 +16,51 @@ NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 SEARCH_QUERY = "cyberattack OR fraud OR protest OR data breach"
 
 
-def generate_hash(text):
+def generate_hash(source, content, url=""):
     """
-    Generates SHA256 hash for duplicate detection
+    Generate a unique SHA256 hash for duplicate prevention.
     """
-    return hashlib.sha256(text.encode()).hexdigest()
-
-
-def is_duplicate(db, content_hash):
-    """
-    Checks if content already exists
-    """
-    return db.query(RawOSINT).filter(
-        RawOSINT.extra_metadata["content_hash"].astext == content_hash
-    ).first()
+    raw_string = f"{source}|{content}|{url}"
+    return hashlib.sha256(raw_string.encode()).hexdigest()
 
 
 def collect_news():
     logging.info("Starting News API ingestion...")
 
-    url = (
-        f"https://newsapi.org/v2/everything?"
-        f"q={SEARCH_QUERY}&"
-        f"language=en&"
-        f"sortBy=publishedAt&"
-        f"apiKey={NEWS_API_KEY}"
+    if not NEWS_API_KEY:
+        logging.error("NEWS_API_KEY not found in environment.")
+        return
+
+    params = {
+        "q": SEARCH_QUERY,
+        "language": "en",
+        "sortBy": "publishedAt",
+        "pageSize": 10,
+        "apiKey": NEWS_API_KEY
+    }
+
+    response = requests.get(
+        "https://newsapi.org/v2/everything",
+        params=params
     )
 
-    response = requests.get(url)
+    print("Status Code:", response.status_code)
 
     if response.status_code != 200:
-        logging.error(f"Status Code: {response.status_code}")
-        logging.error(f"Response: {response.text}")
-    return
+        print("Error Response:", response.text)
+        return
 
+    data = response.json()
+    print("Total Results:", data.get("totalResults"))
 
-    articles = response.json().get("articles", [])
+    articles = data.get("articles", [])
+    print("Articles Length:", len(articles))
+
+    if not articles:
+        print("No articles returned.")
+        return
+
     db = SessionLocal()
-
     inserted_count = 0
 
     try:
@@ -63,22 +70,29 @@ def collect_news():
             if not content:
                 continue
 
-            content_hash = generate_hash(content)
+            content_hash = generate_hash(
+                "newsapi",
+                content,
+                article.get("url")
+            )
 
-            # Duplicate check
-            if is_duplicate(db, content_hash):
+            # Duplicate pre-check
+            existing = db.query(RawOSINT).filter(
+                RawOSINT.content_hash == content_hash
+            ).first()
+
+            if existing:
                 continue
 
             new_record = RawOSINT(
                 source="newsapi",
                 content=content,
                 url=article.get("url"),
+                content_hash=content_hash,
                 extra_metadata={
                     "author": article.get("author"),
                     "published_at": article.get("publishedAt"),
-                    "source_name": article.get("source", {}).get("name"),
-                    "content_hash": content_hash,
-                    "collected_at": datetime.utcnow().isoformat()
+                    "source_name": article.get("source", {}).get("name")
                 }
             )
 
@@ -86,11 +100,16 @@ def collect_news():
             inserted_count += 1
 
         db.commit()
-        logging.info(f"Inserted {inserted_count} new records.")
+        print(f"Inserted {inserted_count} records successfully.")
 
     except Exception as e:
         db.rollback()
-        logging.error(f"Error during ingestion: {e}")
+        print("Unexpected insertion error:", e)
 
     finally:
         db.close()
+
+
+if __name__ == "__main__":
+    collect_news()
+

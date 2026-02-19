@@ -17,12 +17,12 @@ def insert_record(source, content, url=None, metadata=None):
         content_hash = generate_hash(content)
 
         # Duplicate check
-        existing = db.query(RawOSINT).filter(
-            RawOSINT.extra_metadata["content_hash"].astext == content_hash
-        ).first()
+       # existing = db.query(RawOSINT).filter(
+  #          RawOSINT.extra_metadata["content_hash"].astext == content_hash
+     #   ).first()
 
-        if existing:
-            return False
+       # if existing:
+        #    return False
 
         new_record = RawOSINT(
             source=source,
