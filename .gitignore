@@ -1,0 +1,21 @@
+# Python virtual environment
+.venv/
+venv/
+
+
+# Libraries and heavy files
+node_modules/
+*.dll
+*.exe
+*.so
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Project specific
+osnit_session.session
