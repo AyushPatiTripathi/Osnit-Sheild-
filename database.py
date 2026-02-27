@@ -1,14 +1,14 @@
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from dotenv import load_dotenv
 from sqlalchemy.ext.declarative import declarative_base
+from dotenv import load_dotenv
+from typing import Generator
 
-Base = declarative_base()
-# Load environment variables
 load_dotenv()
 
-# Build database URL from environment variables
+Base = declarative_base()
+
 DATABASE_URL = (
     f"postgresql://{os.getenv('DB_USER')}:"
     f"{os.getenv('DB_PASSWORD')}@"
@@ -17,16 +17,13 @@ DATABASE_URL = (
     f"{os.getenv('DB_NAME')}"
 )
 
-# Create SQLAlchemy engine
-engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True  # Prevent stale connections
-)
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
-# Create session factory
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
-)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+def get_db() -> Generator:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
