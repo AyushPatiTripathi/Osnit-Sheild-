@@ -1,21 +1,40 @@
-# Python virtual environment
-.venv/
-venv/
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
+node_modules
+dist
+dist-ssr
+*.local
 
-# Libraries and heavy files
-node_modules/
-*.dll
-*.exe
-*.so
-
-# Python cache
-__pycache__/
-*.py[cod]
-
-# OS specific files
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
 .DS_Store
-Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# Project specific
-osnit_session.session
+*.env
+*.env.*.local
+!.env.example
+!.env.local.example
+
+# Optional npm cache directory
+.npm
+# Optional eslint cache
+.eslintcache
+# Optional PMD cache directory
+.pmd
+
+*.venv
+.venv
+

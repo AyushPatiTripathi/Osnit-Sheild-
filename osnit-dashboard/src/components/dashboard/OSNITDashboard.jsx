@@ -140,7 +140,14 @@ function FilterBar({ filters, setFilters, countries, states, incidentTypes }) {
 function applyFilters(list, filters) {
   return list.filter(inc => {
     if (filters.country && !(inc.country||"").toLowerCase().includes(filters.country.toLowerCase())) return false;
-    if (filters.state   && !(inc.state||"").toLowerCase().includes(filters.state.toLowerCase()))     return false;
+    if (filters.state) {
+      // Match state name against state field, content, summary, or url
+      const s = filters.state.toLowerCase();
+      const inState   = (inc.state||"").toLowerCase().includes(s);
+      const inContent = (inc.content||"").toLowerCase().includes(s);
+      const inSummary = (inc.summary||"").toLowerCase().includes(s);
+      if (!inState && !inContent && !inSummary) return false;
+    }
     if (filters.incident_type && (inc.incident_type||"").toLowerCase() !== filters.incident_type.toLowerCase()) return false;
     if (filters.severity      && (inc.severity||"").toLowerCase() !== filters.severity.toLowerCase())           return false;
     return true;
@@ -515,10 +522,19 @@ export default function OSNITDashboard() {
 
       // Extract countries and states from real incident data — clean strings only
       const rawCountries = [...new Set(incs.map(i=>i.country).filter(v=>v && typeof v==="string" && !v.includes(",") && v.length<50))].sort();
-      const rawStates    = [...new Set(incs.map(i=>i.state).filter(v=>v && typeof v==="string" && !v.includes(",") && v.length<50))].sort();
       setCountries(rawCountries);
-      setStates(rawStates);
     }
+
+    // States — hardcoded India states (DB stores coordinates not names)
+    setStates([
+      "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh",
+      "Goa","Gujarat","Haryana","Himachal Pradesh","Jammu & Kashmir",
+      "Jharkhand","Karnataka","Kerala","Ladakh","Madhya Pradesh",
+      "Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland",
+      "Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu",
+      "Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal",
+      "Delhi","Chandigarh","Puducherry","Lakshadweep","Andaman & Nicobar Islands"
+    ]);
 
     setLastUpdate(new Date());
     setLoading(false);
@@ -577,9 +593,9 @@ export default function OSNITDashboard() {
             Scheduler: <strong style={{ color:schedulerStatus?.running?"#30d158":"#ff2d55" }}>{schedulerStatus?.running?"ON":"OFF"}</strong>
           </span>
         </div>
-        {/* Refresh button — properly wired */}
+        {/* Refresh button */}
         <button
-          onClick={fetchAll}
+          onClick={() => { setLoading(false); fetchAll(); }}
           style={{ padding:"6px 16px", borderRadius:6, cursor:"pointer", background:"#6366f118", color:"#6366f1", border:"1px solid #6366f144", fontFamily:"'IBM Plex Mono',monospace", fontSize:11, fontWeight:700, display:"flex", alignItems:"center", gap:6 }}>
           ↺ Refresh
         </button>
